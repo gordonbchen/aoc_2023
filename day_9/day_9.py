@@ -14,7 +14,11 @@ for hist in data:
     while (nums[-1] != 0).any():
         nums.append(np.diff(nums[-1]))
     
-    next_val = sum(level[-1] for level in nums)
+    next_val = (
+        nums[0][0]
+        - sum(level[0] for level in nums[1::2])
+        + sum(level[0] for level in nums[2::2])
+    )
     s += next_val
 
 print(s)
