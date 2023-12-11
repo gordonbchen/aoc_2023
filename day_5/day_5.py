@@ -30,8 +30,8 @@ def get_ranges_maps(test: bool = False) -> tuple[list[range_t], list[level_maps_
   return ranges, maps
 
 
-def apply_map(r: range_t, m: map_t) -> list[range_t]:
-  """Apply a map to a range."""
+def apply_map(r: range_t, m: map_t) -> list[list[range_t]]:
+  """Apply a map to a range. Returns modified ranges and original ranges."""
   # Unpack values.
   r_s, r_e = r
 
@@ -40,39 +40,43 @@ def apply_map(r: range_t, m: map_t) -> list[range_t]:
 
   if (r_s <= src_s) and (r_e >= src_e):
     # src in range.
-    rs = [(r_s, src_s), (dest_s, dest_e), (src_e, r_e)]
+    rs =  [(dest_s, dest_e)], [(r_s, src_s), (src_e, r_e)]
 
   elif (src_s <= r_s) and (src_e >= r_e):
     # range in src.
-    rs = [(dest_s + (r_s - src_s), dest_e - (src_e - r_e))]
+    rs = [(dest_s + (r_s - src_s), dest_e - (src_e - r_e))], []
 
   elif (src_s <= r_s) and (src_e >= r_s):
     # src on left.
-    rs = [(dest_s + (r_s - src_s), dest_e), (src_e, r_e)]
+    rs = [(dest_s + (r_s - src_s), dest_e)], [(src_e, r_e)]
 
   elif (src_s <= r_e) and (src_e >= r_e):
     # src on right. 
-    rs = [(r_s, src_s), (dest_s, dest_e - (src_e - r_e))]
+    rs = [(dest_s, dest_e - (src_e - r_e))], [(r_s, src_s)] 
 
   else:
-    return [r]
+    rs = [], [r]
   
-  return [i for i in rs if i[0] != i[1]]  # remove empty ranges.
+  return [[r for r in i if r[0] != r[1]] for i in rs]  # remove empty ranges.
   
 
 def apply_level_maps(ranges: list[range_t], level_maps: level_maps_t) -> list[range_t]:
   """Apply level maps to ranges."""
-  new_ranges = ranges.copy()
+  out_ranges = []
 
-  for m in level_maps:
-    for r in ranges:
-      new_rs = apply_map(r, m)
-      new_ranges += new_rs
+  for r in ranges:
+    rs = [r]
+    for m in level_maps:
+      all_new_rs = []
+      for i in rs:
+        out_rs, new_rs = apply_map(i, m)
+        out_ranges += out_rs
+        all_new_rs += new_rs
+      rs = all_new_rs
 
-      if r in new_ranges:
-        new_ranges.remove(r)
+    out_ranges += rs
 
-  return new_ranges
+  return out_ranges
 
 
 if __name__ == "__main__":
@@ -86,4 +90,5 @@ if __name__ == "__main__":
   min_loc = ranges[0][0]
   for i in ranges[1:]:
     min_loc = min(min_loc, i[0])
+
   print(min_loc)
