@@ -5,30 +5,37 @@ import numpy as np
 with open("data.txt") as f:
     data = np.array([list(i) for i in f.read().split()])
 
-# Expand empty lines.
-new_data = []
-for row in data:
-    if np.all(row == "."):
-        new_data.append(row)
-    new_data.append(row)
-
-data = np.array(new_data)
-
-new_data = []
-for col in data.T:
-    if np.all(col == "."):
-        new_data.append(col)
-    new_data.append(col)
-
-data = np.array(new_data).T
-
 # Find coords of all galaxies.
-coords = np.array(list(zip(*np.where(data == "#"))))
+coords = list(zip(*np.where(data == "#")))
+
+# Calculate distance between galaxies.
+def calc_dist(c1, c2, data: np.ndarray, empty_dist: int) -> int:
+    y1, x1 = c1  # Flipped b/c y = rows.
+    y2, x2 = c2
+
+    # Find vertical dist.
+    vert_dist = 0
+    for n_row in range(min(y1, y2) + 1, max(y1, y2) + 1):
+        if not np.any(data[n_row] == "#"):
+            vert_dist += empty_dist
+        else:
+            vert_dist += 1
+
+    # Find horizontal dist.
+    horiz_dist = 0
+    for n_col in range(min(x1, x2) + 1, max(x1, x2) + 1):
+        if not np.any(data[:, n_col] == "#"):
+            horiz_dist += empty_dist
+        else:
+            horiz_dist += 1
+
+    return vert_dist + horiz_dist
 
 # Find dists to each other galaxy.
 total_dists = 0
 for (i, c_i) in enumerate(coords[:-1]):
     for (j, c_j) in enumerate(coords[i + 1:]):
-        total_dists += np.sum(np.abs(c_i - c_j))
+        dist = calc_dist(c_i, c_j, data, int(1e6))
+        total_dists += dist
 
 print(total_dists)
